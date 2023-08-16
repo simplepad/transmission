@@ -1437,7 +1437,8 @@ enum tr_peer_from : uint8_t
     TR_PEER_FROM_PEX, /* peers found from PEX */
     TR_PEER_FROM_RESUME, /* peers found in the .resume file */
     TR_PEER_FROM_LTEP, /* peer address provided in an LTEP handshake */
-    TR_PEER_FROM__MAX
+    TR_PEER_FROM__MAX,
+    TR_PEER_FROM_MANUAL /* peer added manually by the user */
 };
 enum tr_eta : time_t
 {

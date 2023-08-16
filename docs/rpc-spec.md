@@ -148,6 +148,7 @@ Request arguments:
 | `ids`                 | array    | torrent list, as described in 3.1
 | `labels`              | array    | array of string labels
 | `location`            | string   | new location of the torrent's content
+| `peerAdd`             | array    | string of peer addresses:ports, one per line
 | `peer-limit`          | number   | maximum number of peers
 | `priority-high`       | array    | indices of high-priority file(s)
 | `priority-low`        | array    | indices of low-priority file(s)

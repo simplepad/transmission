@@ -1166,6 +1166,83 @@ char const* removeTrackers(tr_torrent* tor, tr_variant* ids)
     return nullptr;
 }
 
+char const* add_peers_manually(tr_torrent* tor, tr_variant* peers)
+{
+    auto pex_size = tr_variantListSize(peers);
+    auto pex = std::vector<tr_pex>(pex_size);
+
+    for (size_t i = 0; i < pex_size; ++i)
+    {
+        auto peer_remote = std::string_view();
+
+        std::optional<tr_address> peer_address = {};
+        std::string_view peer_port = {};
+
+        if (auto const* const val = tr_variantListChild(peers, i); val == nullptr || !tr_variantGetStrView(val, &peer_remote))
+        {
+            continue;
+        }
+
+        // ipv6
+        if (peer_remote.front() == '[')
+        {
+            auto const address_end = peer_remote.find_first_of(']');
+
+            if (address_end == std::string::npos)
+            {
+                return "error parsing peer address";
+            }
+
+            peer_address = tr_address::from_string(peer_remote.substr(1, address_end - 1));
+            peer_port = peer_remote.substr(address_end + 1);
+
+            if (peer_port.empty() || peer_port.front() != ':')
+            {
+                return "error parsing peer port";
+            }
+
+            // remove the ':'
+            peer_port = peer_port.substr(1);
+        }
+        else
+        {
+            auto const address_end = peer_remote.find_first_of(':');
+
+            if (address_end == std::string::npos)
+            {
+                return "error parsing peer address";
+            }
+
+            peer_address = tr_address::from_string(peer_remote.substr(0, address_end));
+            peer_port = peer_remote.substr(address_end + 1);
+        }
+
+        if (!peer_address.has_value())
+        {
+            return "error parsing peer address";
+        }
+
+        if (peer_port.empty())
+        {
+            return "error parsing peer port";
+        }
+
+        // safely parsing peer port into uint16_t
+        auto const peer_port_int = std::stoi(std::data(peer_port));
+        if (peer_port_int > static_cast<int>(UINT16_MAX) || peer_port_int < 0)
+        {
+            return "error bad peer port";
+        }
+
+        pex[i] = tr_pex(peer_address.value(), tr_port::fromHost(static_cast<uint16_t>(peer_port_int)));
+    }
+
+    tr_logAddTraceTor(tor, fmt::format("Manually added {} peers", std::size(pex)));
+    tr_peerMgrAddPex(tor, TR_PEER_FROM_MANUAL, std::data(pex), std::size(pex));
+
+    return nullptr;
+}
+
 char const* torrentSet(tr_session* session, tr_variant* args_in, tr_variant* /*args_out*/, tr_rpc_idle_data* /*idle_data*/)
 {
     char const* errmsg = nullptr;
@@ -1302,6 +1379,11 @@ char const* torrentSet(tr_session* session, tr_variant* args_in, tr_variant* /*a
             {
                 errmsg = "Invalid tracker list";
             }
+        }
+
+        if (errmsg == nullptr && tr_variantDictFindList(args_in, TR_KEY_peerAdd, &tmp_variant))
+        {
+            errmsg = add_peers_manually(tor, tmp_variant);
         }
 
         session->rpcNotify(TR_RPC_TORRENT_CHANGED, tor);
