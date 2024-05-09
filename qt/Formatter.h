@@ -12,6 +12,7 @@
 #include <QString>
 
 #include <libtransmission/utils.h>
+#include <libtransmission/transmission.h> // TR_RATIO_NA
 
 #include "Speed.h"
 
@@ -29,12 +30,7 @@ public:
         return QString::fromStdString(tr_strpercent(x));
     }
 
-    [[nodiscard]] static auto ratio_to_string(double ratio)
-    {
-        static auto constexpr InfinitySymbol = "\xE2\x88\x9E";
-
-        return QString::fromStdString(tr_strratio(ratio, InfinitySymbol));
-    }
+    [[nodiscard]] static QString ratio_to_string(double ratio);
 
     [[nodiscard]] static QString storage_to_string(int64_t bytes);
     [[nodiscard]] static QString storage_to_string(uint64_t bytes);

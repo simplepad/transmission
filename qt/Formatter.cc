@@ -27,6 +27,18 @@ QString Formatter::memory_to_string(int64_t const bytes)
     return QString::fromStdString(Memory{ bytes, Memory::Units::Bytes }.to_string());
 }
 
+QString Formatter::ratio_to_string(double ratio)
+{
+    if (static_cast<int>(ratio) == TR_RATIO_NA)
+    {
+        return tr("None");
+    }
+
+    static auto constexpr InfinitySymbol = "\xE2\x88\x9E";
+
+    return QString::fromStdString(tr_strratio(ratio, InfinitySymbol));
+}
+
 QString Formatter::storage_to_string(uint64_t const bytes)
 {
     if (bytes == 0)
